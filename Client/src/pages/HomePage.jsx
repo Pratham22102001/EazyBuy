@@ -3,6 +3,9 @@ import Layout from "./../components/Layout/Layout";
 import axios from "axios";
 import { Checkbox, Radio } from "antd";
 import { Prices } from "../components/Prices";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/cart";
+import toast from "react-hot-toast";
 
 const HomePage = () => {
   const [products, setProducts] = useState([]);
@@ -12,6 +15,10 @@ const HomePage = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  const [cart, setCart] = useCart();
+
+  const navigate = useNavigate();
 
   // Fetch all categories
   const getAllCategory = async () => {
@@ -90,7 +97,7 @@ const HomePage = () => {
     try {
       const { data } = await axios.post("/api/v1/product/product-filters", {
         checked,
-        radio: radio || [], // Ensure radio is an array or empty array
+        radio: radio || [],
       });
       setProducts(data?.products);
     } catch (error) {
@@ -128,7 +135,7 @@ const HomePage = () => {
           </div>
           <div className="flex flex-col mt-4">
             <button
-              className="btn bg-red-500 text-white py-2 rounded"
+              className="bg-red-500 text-white py-2 rounded hover:bg-red-700"
               onClick={() => window.location.reload()}
             >
               RESET FILTERS
@@ -141,23 +148,41 @@ const HomePage = () => {
             {products?.map((p) => (
               <div
                 key={p._id}
-                className="card m-2 w-72 bg-white rounded-lg shadow-lg overflow-hidden"
+                className="m-2 w-72 bg-white rounded-sm shadow-md hover:shadow-2xl transition-all duration-500 ease-in-out transform hover:scale-110 overflow-hidden"
               >
                 <img
                   src={`/api/v1/product/product-photo/${p._id}`}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-48 object-contain hover:scale-105 transition-all ease-in-out"
                   alt={p.name}
                 />
+
                 <div className="p-4">
-                  <h5 className="font-bold text-lg mb-2">{p.name}</h5>
-                  <p className="text-gray-700 mb-2">
+                  <h5 className="font-bold text-xl mb-2 text-gray-800">
+                    {p.name}
+                  </h5>
+                  <p className="text-gray-600 mb-2">
                     {p.description.substring(0, 30)}...
                   </p>
-                  <p className="text-gray-900 font-bold mb-4">$ {p.price}</p>
-                  <button className="btn bg-blue-500 text-white py-2 px-4 rounded mr-2">
+                  <p className="text-gray-900 font-bold text-lg mb-4">
+                    $ {p.price}
+                  </p>
+                  <button
+                    onClick={() => navigate(`/product/${p.slug}`)}
+                    className="bg-gray-800 text-white py-3 px-6 rounded shadow-md hover:bg-gray-700 hover:shadow-lg transition-all duration-300 w-full text-center"
+                  >
                     More Details
                   </button>
-                  <button className="btn bg-gray-500 text-white py-2 px-4 rounded">
+                  <button
+                    className="mt-2 bg-blue-600 text-white py-3 px-6 rounded shadow-md hover:bg-blue-500 hover:shadow-lg transition-all duration-300 w-full text-center"
+                    onClick={() => {
+                      setCart([...cart, p]);
+                      localStorage.setItem(
+                        "cart",
+                        JSON.stringify([...cart, p])
+                      );
+                      toast.success("Item added to cart");
+                    }}
+                  >
                     ADD TO CART
                   </button>
                 </div>
@@ -167,7 +192,7 @@ const HomePage = () => {
           <div className="m-2 p-3 flex justify-center">
             {products && products.length < total && (
               <button
-                className="btn bg-yellow-500 text-white py-2 px-4 rounded"
+                className=" bg-yellow-500 hover:bg-yellow-600 hover:font-bold transition-all hover:ease-in-out text-white py-2 px-4 rounded"
                 onClick={(e) => {
                   e.preventDefault();
                   setPage(page + 1);

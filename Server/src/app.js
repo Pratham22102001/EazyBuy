@@ -2,20 +2,21 @@ import express from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
+import path from "path"; // Add this to serve static files
 
-// rest object
+// Initialize Express app
 const app = express();
 
 // Configure dotenv
 dotenv.config();
 
+// Middleware
+app.use(helmet());
+app.use(mongoSanitize());
 //middleware
-app.use(
-  cors({
-    credentials: true,
-    origin: process.env.CORS_ORIGIN,
-  })
-);
+app.use(cors());
 app.use(express.json()); // we can use json in req and res
 app.use(morgan("dev"));
 

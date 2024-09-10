@@ -1,6 +1,7 @@
 import fs from "fs";
 import slugify from "slugify";
 import { Product } from "../models/product.model.js";
+import { Category } from "./../models/category.model.js";
 
 export const createProductController = async (req, res) => {
   try {
@@ -91,20 +92,32 @@ export const getSingleProductController = async (req, res) => {
   }
 };
 
-// get photo
 export const productPhotoController = async (req, res) => {
   try {
     const product = await Product.findById(req.params.pid).select("photo");
-    if (product.photo.data) {
-      res.set("Content-type", product.photo.contentType);
+    if (!product) {
+      console.error(`Product with ID ${req.params.pid} not found`);
+      return res.status(404).send({
+        success: false,
+        message: "Product not found",
+      });
+    }
+    if (product.photo && product.photo.data) {
+      res.set("Content-Type", product.photo.contentType);
       return res.status(200).send(product.photo.data);
+    } else {
+      console.error(`Photo for Product with ID ${req.params.pid} not found`);
+      return res.status(404).send({
+        success: false,
+        message: "Photo not found",
+      });
     }
   } catch (error) {
-    console.log(error);
+    console.error("Error retrieving photo:", error);
     res.status(500).send({
       success: false,
-      message: "Erorr while getting photo",
-      error,
+      message: "Error while getting photo",
+      error: error.message,
     });
   }
 };
@@ -239,6 +252,82 @@ export const productListController = async (req, res) => {
       success: false,
       message: "error in per page ctrl",
       error,
+    });
+  }
+};
+//search product
+export const searchProductController = async (req, res) => {
+  try {
+    const { keyword } = req.params;
+    const results = await Product.find({
+      $or: [
+        {
+          name: { $regex: keyword, $options: "i" },
+        },
+        {
+          description: { $regex: keyword, $options: "i" },
+        },
+      ],
+    }).select("-photo");
+    res.json(results);
+  } catch (error) {
+    console.log(error);
+    res.status(400).send({
+      success: false,
+      message: "Error in search product api",
+      error,
+    });
+  }
+};
+
+//similar products
+export const relatedProductController = async (req, res) => {
+  try {
+    const { pid, cid } = req.params;
+    const products = await Product.find({
+      category: cid,
+      _id: { $ne: pid },
+    })
+      .select("-photo")
+      .limit(3)
+      .populate("category");
+    res.status(200).send({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send({
+      success: false,
+      message: "error while getting related products",
+      error,
+    });
+  }
+};
+
+export const productCategoryController = async (req, res) => {
+  try {
+    const category = await Category.findOne({ slug: req.params.slug });
+    if (!category) {
+      return res.status(404).send({
+        success: false,
+        message: "Category not found",
+      });
+    }
+    const products = await Product.find({ category: category._id }).populate(
+      "category"
+    );
+    res.status(200).send({
+      success: true,
+      category,
+      products,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send({
+      success: false,
+      error,
+      message: "Error while getting products",
     });
   }
 };
