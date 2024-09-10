@@ -11,17 +11,18 @@ const app = express();
 
 // Configure dotenv
 dotenv.config();
+app.use(
+  cors({
+    credentials: true,
+    origin: "*", // Allow all origins (use with caution in production)
+  })
+);
 
 // Middleware
 app.use(helmet());
 app.use(mongoSanitize());
 //middleware
-app.use(
-  cors({
-    credentials: true,
-    origin: process.env.CORS_ORIGIN,
-  })
-);
+
 app.use(express.json()); // we can use json in req and res
 app.use(morgan("dev"));
 
