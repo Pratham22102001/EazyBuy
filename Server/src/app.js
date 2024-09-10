@@ -14,7 +14,7 @@ dotenv.config();
 app.use(
   cors({
     credentials: true,
-    origin: "*", // Allow all origins (use with caution in production)
+    origin: "*",
   })
 );
 
